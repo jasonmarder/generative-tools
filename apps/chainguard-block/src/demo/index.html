@@ -14,10 +14,11 @@
         --tc-text: rgba(255, 255, 255, 0.92);
         --tc-muted: rgba(255, 255, 255, 0.48);
         --tc-accent: #0c8ce9;
+        --tc-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif;
       }
 
       * { box-sizing: border-box; }
-      html, body { margin: 0; height: 100%; background: var(--tc-bg); color: var(--tc-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      html, body { margin: 0; height: 100%; background: var(--tc-bg); color: var(--tc-text); font-family: var(--tc-font); }
       body { overflow: hidden; }
       .wrap { position: relative; height: 100%; }
       .pane {
@@ -71,7 +72,7 @@
         backdrop-filter: blur(18px);
       }
       .pane__title { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
-      .pane__meta { color: var(--tc-muted); font: 500 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      .pane__meta { color: var(--tc-muted); font: 500 10px/1 var(--tc-font); letter-spacing: .08em; text-transform: uppercase; }
       .pane > .tp-dfwv { width: 100% !important; }
       .pane .tp-rotv { font-size: 12px; }
       .pane .tp-fldv_t { min-height: 36px; padding-inline: 10px; font-weight: 600; }
@@ -81,7 +82,7 @@
       .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 24px; }
       #mount { width: 100%; height: 100%; max-width: 100%; overflow: visible; }
       #mount svg { display: block; width: 100%; height: 100%; }
-      .info { position: absolute; top: 18px; left: 20px; color: var(--tc-muted); font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      .info { position: absolute; top: 18px; left: 20px; color: var(--tc-muted); font: 500 11px/1 var(--tc-font); letter-spacing: .08em; text-transform: uppercase; }
       a { color: var(--tc-accent); }
 
       @media (max-width: 720px) {

@@ -18,6 +18,10 @@ const currentLabel = document.querySelector("#dock-current");
 const frame = document.querySelector("#tool-frame");
 const announcement = document.querySelector("#tool-announcement");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const appBaseUrl = new URL(import.meta.url);
+appBaseUrl.pathname = appBaseUrl.pathname.replace(/\/[^/]+\/[^/]+$/, "/");
+appBaseUrl.search = "";
+appBaseUrl.hash = "";
 
 let activeIndex = getInitialIndex();
 let menuOpen = false;
@@ -27,9 +31,9 @@ let frameTarget = "";
 menu.innerHTML = tools
   .map(
     (tool, index) => `
-      <button
+      <a
         class="dock-option"
-        type="button"
+        href="${getSelectionUrl(index)}"
         role="menuitemradio"
         aria-checked="false"
         data-index="${index}"
@@ -42,7 +46,7 @@ menu.innerHTML = tools
             <path d="m3.25 7.15 2.35 2.35 5.15-5.15" />
           </svg>
         </span>
-      </button>
+      </a>
     `,
   )
   .join("");
@@ -56,7 +60,13 @@ function getInitialIndex() {
 }
 
 function getToolUrl(index) {
-  return new URL(`./tools/${tools[index].slug}/index.html`, window.location.href).href;
+  return new URL(`tools/${tools[index].slug}/index.html`, appBaseUrl).href;
+}
+
+function getSelectionUrl(index) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("tool", tools[index].slug);
+  return url.href;
 }
 
 function updateSelection(index, announce = false) {
@@ -93,7 +103,7 @@ function setMenuOpen(nextOpen, { instant = false, focusOption = true, returnFocu
     dock.dataset.open = String(nextOpen);
     trigger.setAttribute("aria-expanded", String(nextOpen));
     menu.setAttribute("aria-hidden", String(!nextOpen));
-    menu.inert = !nextOpen;
+    menu.toggleAttribute("inert", !nextOpen);
 
     if (nextOpen && focusOption) {
       requestAnimationFrame(() => options[activeIndex].focus({ preventScroll: true }));
@@ -168,8 +178,11 @@ trigger.addEventListener("keydown", (event) => {
 });
 
 menu.addEventListener("click", (event) => {
-  const option = event.target.closest(".dock-option");
+  const option = event.target instanceof Element ? event.target.closest(".dock-option") : null;
   if (!option) return;
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+  event.preventDefault();
 
   const keyboardInitiated = event.detail === 0;
   selectTool(Number(option.dataset.index), { animate: !keyboardInitiated });
@@ -202,12 +215,10 @@ document.addEventListener("pointerdown", (event) => {
   }
 });
 
-dock.addEventListener("focusout", () => {
-  queueMicrotask(() => {
-    if (menuOpen && !dock.contains(document.activeElement)) {
-      setMenuOpen(false, { instant: true });
-    }
-  });
+document.addEventListener("focusin", (event) => {
+  if (menuOpen && !dock.contains(event.target)) {
+    setMenuOpen(false, { instant: true });
+  }
 });
 
 window.addEventListener("popstate", () => {
@@ -226,5 +237,5 @@ frame.addEventListener("load", () => {
 });
 
 updateSelection(activeIndex);
-menu.inert = true;
+menu.toggleAttribute("inert", true);
 loadFrame(activeIndex, !reduceMotion.matches);

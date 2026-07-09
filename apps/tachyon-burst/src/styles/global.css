@@ -29,8 +29,8 @@
   --tk-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
 
   /* Type */
-  --tk-font: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --tk-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --tk-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif;
+  --tk-mono: var(--tk-font);
 
   --tk-ease: cubic-bezier(0.215, 0.61, 0.355, 1);
 

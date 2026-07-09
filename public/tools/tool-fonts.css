@@ -1,0 +1,52 @@
+:root {
+  --tool-ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif;
+  --tk-font: var(--tool-ui-font);
+  --tk-mono: var(--tool-ui-font);
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea,
+label,
+output {
+  font-family: var(--tool-ui-font) !important;
+}
+
+.pane,
+.pane *,
+.tp-dfwv,
+.tp-dfwv *,
+.lil-gui,
+.lil-gui *,
+.dg,
+.dg *,
+.dialkit-root,
+.dialkit-root *,
+.controls-panel,
+.controls-panel *,
+.control-panel,
+.control-panel *,
+.tool-panel,
+.tool-panel *,
+.version-tabs,
+.version-tabs *,
+.experiment-tabs,
+.experiment-tabs * {
+  font-family: var(--tool-ui-font) !important;
+}
+
+.tp-dfwv {
+  --font-family: var(--tool-ui-font) !important;
+}
+
+input,
+output,
+.tp-txtv_i,
+.tp-lblv_v,
+.lil-gui input,
+.dg input {
+  font-variant-numeric: tabular-nums;
+}
