@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organic Pattern Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #080808;
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            overflow: hidden;
+        }
+        #canvas-container {
+            background: #141414;
+            box-shadow: 0 20px 80px rgba(0,0,0,.48);
+        }
+        .dg.ac {
+            z-index: 1000 !important;
+            position: fixed !important;
+            top: 12px !important;
+            right: 12px !important;
+            left: auto !important;
+            bottom: 12px;
+            width: 312px !important;
+            height: auto !important;
+            overflow: auto;
+            pointer-events: none;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,.16) transparent;
+        }
+        .dg.ac > .dg.main {
+            float: none !important;
+            width: 312px !important;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(20,20,20,.96);
+            box-shadow: 0 20px 56px rgba(0,0,0,.46);
+            backdrop-filter: blur(18px) saturate(120%);
+            pointer-events: auto;
+        }
+        .dg { color: rgba(255,255,255,.9); font: 12px Inter, ui-sans-serif, system-ui, sans-serif; text-shadow: none; }
+        .dg.main .close-button { position: sticky; bottom: 0; width: 100% !important; height: 32px; border-top: 1px solid rgba(255,255,255,.1); background: #1b1b1b; color: rgba(255,255,255,.58); line-height: 32px; }
+        .dg.main .close-button:hover { background: #242424; color: white; }
+        .dg .cr, .dg li.title { border-left: 0 !important; border-bottom: 1px solid rgba(255,255,255,.075); background: transparent; }
+        .dg li.title { position: relative; height: 36px; padding-left: 26px; background: rgba(255,255,255,.018) !important; background-image: none !important; font-size: 12px; font-weight: 600; line-height: 36px; }
+        .dg li.title::before { content: "⌄"; position: absolute; left: 10px; top: 0; color: rgba(255,255,255,.58); font-size: 12px; }
+        .dg ul.closed > li.title::before { content: "›"; }
+        .dg .cr { min-height: 34px; padding: 3px 10px; }
+        .dg .property-name { color: rgba(255,255,255,.64); line-height: 28px; }
+        .dg .c input[type=text] { height: 26px; border-radius: 4px; background: rgba(255,255,255,.075); color: #70b0fa; }
+        .dg .c .slider { height: 4px; margin-top: 12px; border-radius: 999px; background: rgba(255,255,255,.1); }
+        .dg .c .slider-fg { border-radius: inherit; background: #0c8ce9; }
+        .dg .cr.function .property-name { width: 100%; color: rgba(255,255,255,.9); font-weight: 600; text-align: center; }
+        .dg .cr.function:hover { background: rgba(12,140,233,.2); }
+
+        @media (max-width: 720px) {
+            .dg.ac { top: auto !important; left: 8px !important; right: 8px !important; bottom: 8px; width: auto !important; max-height: 45vh; }
+            .dg.ac > .dg.main { width: 100% !important; }
+            #canvas-container { width: 100vw; overflow: hidden; }
+            #canvas-container canvas { display: block; width: 100% !important; height: auto !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script src="sketch.js"></script>
+</body>
+</html>

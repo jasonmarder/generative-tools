@@ -1,0 +1,823 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Runlayer hero — in-situ scaffolding (UI only).
+   The particle orb (main.ts) is left untouched; here it is treated as a fixed
+   background layer that shows through the hero's transparent right column.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── khTeka (trial) ───────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "KH Teka";
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/KHTekaTRIAL-Light.woff2") format("woff2");
+}
+@font-face {
+  font-family: "KH Teka";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/KHTekaTRIAL-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "KH Teka";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/KHTekaTRIAL-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "KH Teka";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/KHTekaTRIAL-Bold.woff2") format("woff2");
+}
+
+/* ─── Design tokens (from the hero spec) ───────────────────────────────────── */
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Header inner bar — matches rehaul ~89px band, slightly tighter rails */
+  --header-min-height: 89px;
+  --header-px-sm: var(--space-4);   /* 16px (was space-5 / 20px) */
+  --header-px: var(--space-6);      /* 24px (was space-8 / 32px) */
+  --header-py-sm: var(--space-5);   /* 20px mobile */
+  --header-py: 1.8125rem;           /* ~29px — balances logo in 89px band below lg */
+  --header-cta-px: calc(var(--space-5) * 0.75); /* 10px — half of CTA default rail */
+
+  --container-max: 1512px;   /* production page max — matches rehaul site */
+  --frame-width: 1448px;     /* central content: 1512 − two 32px gutter bands */
+  --rail-width: 32px;        /* dotted gutter band outside the main frame */
+  --home-hero-min-height: 562px;
+  /* Figma 254:2757 architectural hero frame (Layer_1 inset reference) */
+  --hero-arch-frame-height: 562px;
+  --home-hero-copy-max: 680px;
+  --home-hero-h1-size-min: 3.5rem;   /* 56px — mobile floor */
+  --home-hero-h1-size-max: 6rem;    /* 96px — lg cap */
+  /* 56px @ ~390px → 96px @ 1024px+ */
+  --home-hero-h1-fluid: clamp(
+    var(--home-hero-h1-size-min),
+    1.9375rem + 6.25vw,
+    var(--home-hero-h1-size-max)
+  );
+  --home-hero-h1-leading: 1.08;
+  --home-hero-h1-leading-lg: 1.104167; /* 106px / 96px */
+  --home-hero-body-max: 32rem;   /* ~512px — editorial subhead, narrower than form */
+  --home-form-width: min(100%, 744px);
+  --home-logo-cell-min-height: 126px; /* rehaul: 2×126 = 252px logo band */
+  --home-logo-cell-min-height-sm: 70px;
+
+  --font-teka: "KH Teka", "Geist", Arial, sans-serif;
+
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --ease-soft: ease;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: ease-in-out;
+
+  /* Layered shadows (surfaces skill) — depth without heavy borders */
+  --shadow-border:
+    0 0 0 1px rgba(28, 25, 23, 0.06),
+    0 1px 2px -1px rgba(28, 25, 23, 0.06),
+    0 2px 4px 0 rgba(28, 25, 23, 0.04);
+  --shadow-elevated:
+    0 0 0 1px rgba(28, 25, 23, 0.08),
+    0 8px 24px -4px rgba(28, 25, 23, 0.1),
+    0 16px 40px -8px rgba(28, 25, 23, 0.12);
+
+  --radius-dropdown-outer: 8px;
+  --radius-dropdown-inner: 4px; /* outer − dropdown padding (space-2 = 8px) */
+
+  --border-frame: #d6d3d1; /* stone-300 — inner content edge + gutter outer edge */
+
+  /* border-beam, radial port — per-spoke color pulses race tip → hub. --beam-c-*
+     are the composite gradient colors; timing (stagger/beams/travel) lives in the
+     JS scheduler. All live-tweakable via the GUI ("Line burst" folder). */
+  --beam-base: #d6d3d1;
+  --beam-c-hot: #d7b17f; /* leading head */
+  --beam-c-core: #c09a68; /* core */
+  --beam-c-deep: #9d7034; /* trailing tail */
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #f5f5f4;            /* stone-100 — matches the orb's clear color */
+  color: #1c1917;                /* stone-900 */
+  font-family: var(--font-teka); /* h1 inherits khTeka; tight tracking is the trait */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+body { overflow-x: hidden; }
+canvas { display: block; }
+
+/* ─── Orb viewport ───────────────────────────────────────────────────────────
+   main.ts mounts the WebGL canvas inside this right-column box. Keeping the
+   canvas in-flow here lets overflow:hidden clip the burst exactly at the main
+   content edge instead of leaking into the right gutter/page background. */
+.hero-orb-viewport {
+  isolation: isolate;
+  min-height: 100%;
+}
+
+/* Stacked hero (< lg): orb sits flush under the email form */
+@media (max-width: 1023px) {
+  .hero-orb-viewport {
+    min-height: max(280px, 40vh);
+    width: 100%;
+    margin-top: 0;
+  }
+}
+.hero-orb-viewport > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Radial fade: blends particle edges into the stone-100 viewport background. */
+.hero-orb-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(245, 245, 244, 0.00) 35.27%, #F5F5F4 100%);
+}
+
+/* Dev mode (toggled with `~`): show tuning controls and let the orb take pointer
+   input again (OrbitControls / drag-to-rotate). */
+body:not(.dev-hidden) .hero-orb-viewport > canvas { pointer-events: auto; }
+
+/* ─── Page frame ────────────────────────────────────────────────────────────
+   .site-dotted-frame (full width)
+     └ main (max-width 1512 = --container-max, centered)
+         └ .container-main — header, hero, divider strips, logo grid, spacer;
+           Margin.svg ::before/::after rails on this column (right:100% / left:100%)
+   Frame stays transparent so the fixed orb shows through the hero right column. */
+.site-dotted-frame {
+  position: relative;
+  overflow-x: clip;
+  background: #f5f5f4;
+}
+
+.container-main {
+  position: relative;
+  margin-inline: auto;
+  width: calc(100% - (var(--rail-width) * 2));
+  max-width: var(--frame-width);
+  background: #f5f5f4;
+  /* Inner vertical frame: border-x (stone-300). Outer gutter edge: rail ::before/::after borders. */
+}
+@media (max-width: 767px) {
+  .container-main {
+    width: 100%;
+  }
+}
+
+/* Gutter rails — Margin.svg dots only; stone-300 outer edge via border on the rail.
+   Anchored to .container-main (right:100% / left:100%) for symmetric gutters. */
+.container-main::before,
+.container-main::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 33px;                 /* = Margin.svg width; dots sit between inner border-x and outer rule */
+  z-index: 40;
+  pointer-events: none;
+  box-sizing: border-box;
+  border-left: 1px solid var(--border-frame);
+  background-image: url("/Margin.svg");
+  background-position: top left;
+  background-size: 33px auto;
+  background-repeat: repeat-y;
+}
+/* Flush against the content edges; the right gutter is mirrored so its dot
+   pattern reflects the left exactly (perfect bilateral symmetry). */
+.container-main::before { right: 100%; }
+.container-main::after  { left: 100%; transform: scaleX(-1); }
+@media (max-width: 767px) {
+  .container-main::before,
+  .container-main::after { display: none; }
+}
+
+
+@media (min-width: 1024px) {
+  .container-main > header > div {
+    min-height: var(--header-min-height);
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .hero-copy-fade {
+    padding-left: 62px !important;
+    padding-right: 62px !important;
+  }
+}
+
+/* ─── Interface polish (make-interfaces-feel-better) ─────────────────────── */
+
+.hero-copy-fade h1 {
+  max-width: var(--home-hero-copy-max);
+  font-size: var(--home-hero-h1-fluid);
+  line-height: var(--home-hero-h1-leading);
+  letter-spacing: -0.03em;
+  text-wrap: pretty;
+}
+
+@media (min-width: 1024px) {
+  .hero-copy-fade h1 {
+    line-height: var(--home-hero-h1-leading-lg);
+    letter-spacing: -0.05em; /* −4.8px at 96px */
+    text-wrap: balance;
+  }
+}
+
+.hero-copy-fade p {
+  text-wrap: pretty;
+}
+
+/* Primary CTAs: specific transitions + tactile press (scale 0.96) */
+.hero-copy-fade form button[type="submit"],
+.container-main header a[href="/book-a-demo"] {
+  transition-property: color, background-color, border-color, transform;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-soft);
+}
+
+.hero-copy-fade form button[type="submit"]:active,
+.container-main header a[href="/book-a-demo"]:active {
+  transform: scale(0.96);
+}
+
+/* Hero email form: sharp corners + shadow depth (input keeps borderless) */
+.hero-copy-fade form {
+  border-radius: 0;
+  border-color: transparent;
+  box-shadow: var(--shadow-border);
+  transition-property: box-shadow;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-soft);
+}
+
+.hero-copy-fade form:focus-within {
+  box-shadow:
+    0 0 0 2px #1c1917,
+    0 1px 2px -1px rgba(28, 25, 23, 0.08),
+    0 4px 8px 0 rgba(28, 25, 23, 0.06);
+}
+
+.hero-copy-fade form button[type="submit"] {
+  border-radius: 0;
+}
+
+/* Header nav: 40×40px hit targets on compact controls */
+.container-main header nav[aria-label="Main navigation"] > a,
+.container-main header nav[aria-label="Main navigation"] > .relative > button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.container-main header nav[aria-label="Main navigation"] > .relative > button svg {
+  margin-top: 1px; /* optical center on chevron */
+}
+
+.container-main header nav[aria-label="Main navigation"] .relative > div {
+  border-radius: var(--radius-dropdown-outer);
+  border-color: transparent;
+  box-shadow: var(--shadow-elevated);
+}
+
+.container-main header nav[aria-label="Main navigation"] .relative > div a {
+  border-radius: var(--radius-dropdown-inner);
+}
+
+.container-main header .lg\:hidden > a[href="/book-a-demo"] {
+  min-height: 40px;
+}
+
+.ui-mobile-menu-btn {
+  box-shadow: var(--shadow-border);
+  transition-property: box-shadow, background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-soft);
+}
+
+.ui-mobile-menu-btn:hover {
+  box-shadow:
+    0 0 0 1px rgba(28, 25, 23, 0.08),
+    0 1px 2px -1px rgba(28, 25, 23, 0.08),
+    0 2px 4px 0 rgba(28, 25, 23, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy-fade form button[type="submit"]:active,
+  .container-main header a[href="/book-a-demo"]:active {
+    transform: none;
+  }
+}
+
+/* ─── Hero left-column fade: dissolves the orb's inner arm under the copy ───── */
+.hero-copy-fade::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    #f5f5f4 0%,
+    #f5f5f4 58%,
+    rgba(245, 245, 244, 0) 100%
+  );
+}
+@media (max-width: 1023px) {
+  /* Stacked layout: solid copy block, soft fade at bottom into the orb below. */
+  .hero-copy-fade::before {
+    background: linear-gradient(
+      180deg,
+      #f5f5f4 0%,
+      #f5f5f4 45%,
+      rgba(245, 245, 244, 0.98) 65%,
+      rgba(245, 245, 244, 0.82) 82%,
+      rgba(245, 245, 244, 0.35) 94%,
+      rgba(245, 245, 244, 0) 100%
+    );
+  }
+}
+
+/* ─── Hero demo form (width cap inside the copy column) ───────────────────── */
+.hero-demo-form {
+  width: 100%;
+  max-width: var(--home-form-width);
+}
+
+/* ─── Focus (visible keyboard rings, stone palette) ───────────────────────── */
+.container-main :is(a, button, input, select, textarea):focus {
+  outline: none;
+}
+.container-main :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid #1c1917;
+  outline-offset: 2px;
+}
+.container-main a[href="/book-a-demo"]:focus-visible,
+.container-main .hero-demo-form button[type="submit"]:focus-visible {
+  outline-color: #fafafa;
+}
+.container-main .hero-demo-form input:focus-visible {
+  outline: none;
+}
+
+/* ─── Hero load (CSS only; respects reduced motion) ───────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy-fade > h1,
+  .hero-copy-fade > p,
+  .hero-copy-fade > form {
+    animation: hero-reveal 0.75s var(--ease-out) both;
+  }
+  .hero-copy-fade > p { animation-delay: 0.07s; }
+  .hero-copy-fade > form { animation-delay: 0.14s; }
+}
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Dev controls: hidden by default, revealed with `~` ───────────────────── */
+body.dev-hidden .lil-gui,
+body.dev-hidden .hero-mode-tabs { display: none !important; }
+
+/* Unified hero mode tabs (lines + logo choreography) */
+.hero-mode-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 40;
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(28, 25, 23, 0.12);
+  border-radius: 999px;
+  background: rgba(245, 245, 244, 0.74);
+  box-shadow: 0 12px 36px rgba(28, 25, 23, 0.08);
+  backdrop-filter: blur(14px);
+}
+.hero-mode-tabs button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: transparent;
+  color: rgba(28, 25, 23, 0.54);
+  font: 600 12px/1 var(--font-teka);
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.hero-mode-tabs button.is-active {
+  background: rgba(28, 25, 23, 0.92);
+  color: #f5f5f4;
+}
+
+/* ─── Hero mode toggles ───────────────────────────────────────────────────── */
+/* "lines" and "lines-dense" are both architectural; the rest use the particle orb. */
+body[data-hero-mode="lines"] .hero-particles,
+body[data-hero-mode="lines-dense"] .hero-particles { display: none !important; }
+body:not([data-hero-mode="lines"]):not([data-hero-mode="lines-dense"]) .hero-architectural { display: none !important; }
+body[data-hero-mode="lines"] .hero-section,
+body[data-hero-mode="lines-dense"] .hero-section { border-bottom-width: 0; }
+
+/* ─── Architectural hero (Figma 254:2757) ─────────────────────────────────── */
+.hero-architectural {
+  display: block;
+  width: 100%;
+  min-height: var(--hero-arch-frame-height);
+  background: #f5f5f4;
+}
+
+.hero-arch-canvas {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: var(--hero-arch-frame-height);
+  min-height: var(--hero-arch-frame-height);
+  max-height: var(--hero-arch-frame-height);
+}
+
+.hero-arch-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Figma 254:3310 Layer_1: 2017.11px square at (-338, -805) of the 1361x562 frame.
+   Percentages keep every ray anchored to the same spot in each panel at any width. */
+.hero-arch-burst svg,
+.hero-line-burst-svg {
+  display: block;
+  position: absolute;
+  left: -24.835%;   /* -338 / 1361 */
+  top: -143.238%;   /* -805 / 562 */
+  width: 148.208%;  /* 2017.11 / 1361 */
+  height: 358.917%; /* 2017.11 / 562 */
+  max-width: none;
+  overflow: visible;
+}
+
+/* ─── border-beam, per-spoke radial port ───────────────────────────────────
+   Two stacked copies of the burst: a static gray base, and a beam layer whose
+   active spokes carry a traveling tip→hub gradient. A JS scheduler (hero-arch-
+   motion.ts) launches individual beams — blue-noise distributed, organically
+   staggered — so the timing is per-spoke rather than one shared sweep.
+   Stop colors come from --beam-c-* (live via the GUI); the scheduler animates
+   each stop's offset + opacity to move the band. */
+.hero-arch-burst-base path {
+  fill: var(--beam-base);
+}
+
+/* Beam layer sits over the base; the scheduler paints only active spokes (the
+   rest keep fill="none" via attribute, so the gray base shows through). The
+   drop-shadow reads just the painted spokes, so the bloom hugs the live beams. */
+.hero-arch-burst-beam {
+  pointer-events: none;
+  filter:
+    drop-shadow(0 0 5px rgb(from var(--beam-c-core) r g b / 0.5))
+    drop-shadow(0 0 12px rgb(from var(--beam-c-deep) r g b / 0.3));
+}
+
+/* Gradient stop hues — driven by the live CSS vars; the scheduler owns offset
+   and opacity (the traveling band). */
+.beam-stop-hot { stop-color: var(--beam-c-hot); }
+.beam-stop-core { stop-color: var(--beam-c-core); }
+.beam-stop-deep { stop-color: var(--beam-c-deep); }
+
+.hero-arch-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* Figma 254:2757 panel edges of the 1361-wide frame: 536, 796, 1044 */
+  grid-template-columns: 536fr 260fr 248fr 317fr;
+  /* Figma 254:2757 rows: 257 + 201 + 104 = 562 */
+  grid-template-rows: 257px 201px 104px;
+  width: 100%;
+  height: var(--hero-arch-frame-height);
+  min-height: var(--hero-arch-frame-height);
+  max-height: var(--hero-arch-frame-height);
+}
+
+@media (min-width: 1024px) {
+  /* Single owner for frame bottom — continuous T-junctions */
+  .hero-arch-grid::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: 0;
+    height: 1px;
+    background: var(--border-frame);
+    z-index: 2;
+    pointer-events: none;
+  }
+}
+
+.hero-arch-block {
+  box-sizing: border-box;
+  background: #f5f5f4;
+}
+
+.hero-arch-block--headline {
+  grid-column: 1 / 3; /* 0 → 796 */
+  grid-row: 1;
+  display: flex;
+  align-items: flex-end;
+  min-height: 257px;
+  padding: 24px 64px 24px 32px;
+  border-top: 1px solid var(--border-frame);
+  border-right: 1px solid var(--border-frame);
+  border-bottom: 1px solid var(--border-frame);
+}
+
+@media (min-width: 1024px) {
+  /* Top frame line owned by .hero-arch-canvas::before — avoid partial-width duplicate */
+  .hero-arch-block--headline {
+    border-top: none;
+  }
+}
+
+.hero-arch-block--headline h1 {
+  max-width: var(--home-hero-copy-max);
+  font-size: var(--home-hero-h1-fluid);
+  line-height: var(--home-hero-h1-leading);
+  letter-spacing: -0.03em;
+  text-wrap: pretty;
+}
+
+.hero-arch-block--body {
+  grid-column: 2 / 5; /* 536 → 1361 */
+  grid-row: 2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 24px;
+  margin-top: -1px;
+  border-top: 1px solid var(--border-frame);
+  border-left: 1px solid var(--border-frame);
+}
+
+@media (min-width: 1024px) {
+  /* Frame right edge owned by container-main border-x — no duplicate border-right */
+  .hero-arch-block--body::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: 0;
+    height: 1px;
+    background: var(--border-frame);
+    z-index: 3;
+    pointer-events: none;
+  }
+}
+
+.hero-arch-block--body p {
+  max-width: var(--home-hero-body-max);
+  text-wrap: pretty;
+}
+
+.hero-arch-block--form {
+  grid-column: 2 / 4; /* 536 → 1044, beam strip 1044 → 1361 stays open */
+  grid-row: 3;
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  padding: 24px;
+  margin-top: -1px;
+  border: 1px solid var(--border-frame);
+  border-top: none;
+}
+
+.hero-arch-block--form .hero-demo-form {
+  max-width: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  .hero-arch-block--headline h1 {
+    font-size: 6rem;
+    line-height: 1.104167;
+    letter-spacing: -0.05em;
+    text-wrap: balance;
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero-arch-grid::after {
+    display: none;
+  }
+
+  .hero-arch-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    min-height: auto;
+  }
+
+  .hero-arch-block--headline,
+  .hero-arch-block--body,
+  .hero-arch-block--form {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: auto;
+    max-width: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    border: 1px solid var(--border-frame);
+    border-left: none;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  .hero-arch-block--body::after {
+    display: none;
+  }
+
+  .hero-arch-block--body,
+  .hero-arch-block--form {
+    margin-top: -1px;
+  }
+
+  .hero-arch-block--headline {
+    padding: var(--space-12) var(--space-12) var(--space-6) var(--space-6);
+  }
+
+  .hero-arch-block--body,
+  .hero-arch-block--form {
+    padding: var(--space-6);
+  }
+
+  .hero-arch-block--form .hero-demo-form {
+    max-width: none;
+  }
+
+  .hero-arch-canvas {
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    max-height: none;
+  }
+
+  .hero-arch-grid {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+  }
+
+  .hero-architectural {
+    min-height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mode-tabs button { transition: none; }
+  .hero-arch-burst-beam { display: none; }
+}
+
+/* Small affordance noting the dev toggle (hidden once dev mode is open) */
+.dev-hint {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 40;
+  padding: 6px 10px;
+  border: 1px solid rgba(28, 25, 23, 0.12);
+  border-radius: 8px;
+  background: rgba(245, 245, 244, 0.7);
+  color: rgba(28, 25, 23, 0.5);
+  font: 500 11px/1 var(--font-teka);
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+body .dev-hint { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy-fade > h1,
+  .hero-copy-fade > p,
+  .hero-copy-fade > form { animation: none; }
+}
+
+/* ─── Divider + customer logo grid (Figma 55-1111) ───────────────────────── */
+.divider-strip {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+/* Dotted rule — matches rehaul divider strip (2px dash + 4px gap, stone-200) */
+.divider-strip__line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  flex-shrink: 0;
+  background: repeating-linear-gradient(to right, #e7e5e4 0 2px, transparent 2px 6px);
+}
+
+.customer-logo-section {
+  width: 100%;
+}
+
+.customer-logo-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(var(--home-logo-cell-min-height-sm), auto);
+  margin: 0;
+  padding: 0;
+}
+
+.customer-logo-grid__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--home-logo-cell-min-height-sm);
+  padding: var(--space-4) var(--space-1);
+  border-right: 1px solid var(--border-frame);
+  border-bottom: 1px solid var(--border-frame);
+  background: #f5f5f4;
+}
+
+@media (min-width: 768px) {
+  .customer-logo-grid {
+    grid-auto-rows: minmax(var(--home-logo-cell-min-height), auto);
+  }
+
+  .customer-logo-grid__cell {
+    min-height: var(--home-logo-cell-min-height);
+    padding: var(--space-6) var(--space-1);
+  }
+}
+
+/* Internal grid lines only — outer edges use section border-x + cell borders */
+.customer-logo-grid__cell:nth-child(4n) {
+  border-right: none;
+}
+
+.customer-logo-grid img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Per-logo optical scale (native SVG viewBox → balanced cell presence) */
+.customer-logo-grid__cell--decagon img { max-height: 34px; max-width: min(178px, 72%); }
+.customer-logo-grid__cell--instacart img { max-height: 26px; max-width: min(140px, 80%); }
+.customer-logo-grid__cell--angellist img { max-height: 27px; max-width: min(118px, 70%); }
+.customer-logo-grid__cell--lemonade img { max-height: 32px; max-width: min(139px, 72%); }
+.customer-logo-grid__cell--gusto img { max-height: 32px; max-width: min(85px, 48%); }
+.customer-logo-grid__cell--opendoor img { max-height: 29px; max-width: min(132px, 72%); }
+.customer-logo-grid__cell--dbt-labs img { max-height: 32px; max-width: min(140px, 78%); }
+.customer-logo-grid__cell--jane img { max-height: 40px; max-width: min(59px, 36%); }
+
+@media (max-width: 767px) {
+  .customer-logo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* 2×4 layout: right column + last row only */
+  .customer-logo-grid__cell:nth-child(4n) {
+    border-right: 1px solid var(--border-frame);
+  }
+
+  .customer-logo-grid__cell:nth-child(2n) {
+    border-right: none;
+  }
+}

@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chainguard Block Layout Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --tc-bg: #080808;
+        --tc-panel: rgba(20, 20, 20, 0.96);
+        --tc-panel-raised: #242424;
+        --tc-border: rgba(255, 255, 255, 0.12);
+        --tc-text: rgba(255, 255, 255, 0.92);
+        --tc-muted: rgba(255, 255, 255, 0.48);
+        --tc-accent: #0c8ce9;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--tc-bg); color: var(--tc-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      body { overflow: hidden; }
+      .wrap { position: relative; height: 100%; }
+      .pane {
+        --tp-base-background-color: transparent;
+        --tp-base-shadow-color: transparent;
+        --tp-button-background-color: rgba(255, 255, 255, 0.08);
+        --tp-button-background-color-active: rgba(255, 255, 255, 0.16);
+        --tp-button-background-color-focus: rgba(255, 255, 255, 0.13);
+        --tp-button-background-color-hover: rgba(255, 255, 255, 0.12);
+        --tp-button-foreground-color: var(--tc-text);
+        --tp-container-background-color: rgba(255, 255, 255, 0.025);
+        --tp-container-background-color-active: rgba(255, 255, 255, 0.08);
+        --tp-container-background-color-focus: rgba(255, 255, 255, 0.06);
+        --tp-container-background-color-hover: rgba(255, 255, 255, 0.05);
+        --tp-container-foreground-color: var(--tc-text);
+        --tp-groove-foreground-color: var(--tc-accent);
+        --tp-input-background-color: rgba(255, 255, 255, 0.07);
+        --tp-input-background-color-active: rgba(255, 255, 255, 0.12);
+        --tp-input-background-color-focus: rgba(255, 255, 255, 0.1);
+        --tp-input-background-color-hover: rgba(255, 255, 255, 0.09);
+        --tp-input-foreground-color: var(--tc-text);
+        --tp-label-foreground-color: rgba(255, 255, 255, 0.67);
+        --tp-monitor-background-color: rgba(0, 0, 0, 0.2);
+        --tp-monitor-foreground-color: var(--tc-accent);
+        position: fixed;
+        z-index: 10;
+        top: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: 312px;
+        overflow: auto;
+        border: 1px solid var(--tc-border);
+        border-radius: 8px;
+        background: var(--tc-panel);
+        box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+        backdrop-filter: blur(18px) saturate(120%);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,.16) transparent;
+      }
+      .pane__header {
+        position: sticky;
+        z-index: 4;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 36px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--tc-border);
+        background: rgba(20, 20, 20, 0.96);
+        backdrop-filter: blur(18px);
+      }
+      .pane__title { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+      .pane__meta { color: var(--tc-muted); font: 500 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      .pane > .tp-dfwv { width: 100% !important; }
+      .pane .tp-rotv { font-size: 12px; }
+      .pane .tp-fldv_t { min-height: 36px; padding-inline: 10px; font-weight: 600; }
+      .pane .tp-lblv { padding-inline: 10px; }
+      .pane .tp-lblv_l { color: rgba(255,255,255,.62); }
+      .pane .tp-btnv_b { min-height: 28px; border-radius: 4px; }
+      .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 24px; }
+      #mount { width: 100%; height: 100%; max-width: 100%; overflow: visible; }
+      #mount svg { display: block; width: 100%; height: 100%; }
+      .info { position: absolute; top: 18px; left: 20px; color: var(--tc-muted); font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      a { color: var(--tc-accent); }
+
+      @media (max-width: 720px) {
+        .pane { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46vh; }
+        .stage { padding: 12px 12px calc(46vh + 20px); }
+        .info { top: 12px; left: 12px; }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-BQjNMbzN.js"></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="pane" id="pane">
+        <div class="pane__header">
+          <span class="pane__title">Block Layout</span>
+          <span class="pane__meta">Chainguard</span>
+        </div>
+      </div>
+      <div class="stage">
+        <div id="mount"></div>
+        <div class="info">Press R to reroll seed</div>
+      </div>
+    </div>
+  </body>
+</html>

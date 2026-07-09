@@ -1,0 +1,4 @@
+*.bin binary
+*.plite binary
+*.woff2 binary
+public/tools/** -whitespace

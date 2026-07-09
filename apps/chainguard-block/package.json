@@ -1,0 +1,40 @@
+{
+  "name": "chainguard-block-generator",
+  "version": "1.0.0",
+  "description": "A small framework-agnostic TypeScript library that generates Chainguard-style block layouts (rectangles only, no text) and a plain HTML/ESM demo for live tweaking and exporting.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsup --config tsup.config.ts",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview"
+  },
+  "keywords": ["chainguard","layout","svg","blocks","typescript"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "tweakpane": "^4.0.5"
+  }
+}

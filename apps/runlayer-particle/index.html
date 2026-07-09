@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>Runlayer Particle Orb</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: #F5F5F4;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    canvas { display: block; }
+
+    .experiment-tabs {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      z-index: 4;
+      display: flex;
+      gap: 6px;
+      padding: 5px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 7px;
+      background: rgba(20, 20, 20, 0.94);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(18px) saturate(120%);
+    }
+
+    .experiment-tabs button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.5);
+      font: 600 12px/1 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .experiment-tabs button.is-active {
+      background: rgba(255, 255, 255, 0.11);
+      color: rgba(255,255,255,.94);
+    }
+
+    .experiment-tabs button:hover { color: rgba(255,255,255,.84); }
+    .experiment-tabs button:focus-visible { outline: 2px solid rgba(112,176,250,.75); outline-offset: 1px; }
+
+    .lil-gui {
+      --background-color: rgba(20, 20, 20, 0.96);
+      --text-color: rgba(255, 255, 255, 0.9);
+      --title-background-color: transparent;
+      --title-text-color: #fff;
+      --widget-color: rgba(255, 255, 255, 0.075);
+      --hover-color: rgba(255, 255, 255, 0.11);
+      --focus-color: rgba(255, 255, 255, 0.14);
+      --number-color: #70b0fa;
+      --string-color: #70b0fa;
+      --font-size: 12px;
+      --input-font-size: 12px;
+      --widget-height: 28px;
+      --name-width: 47%;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+    }
+
+    .lil-gui.root {
+      top: 12px;
+      right: 12px;
+      width: 312px !important;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(18px) saturate(120%);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.16) transparent;
+    }
+
+    .lil-gui .title {
+      height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 36px;
+    }
+
+    .lil-gui .children { border-left: 0; }
+    .lil-gui .controller { min-height: 34px; padding: 3px 10px; }
+    .lil-gui .controller .name { color: rgba(255,255,255,.64); }
+    .lil-gui input, .lil-gui select { border-radius: 4px; }
+    .lil-gui .controller.function .widget { color: rgba(255,255,255,.92); font-weight: 600; }
+    .lil-gui .controller.function:hover .widget { background: rgba(12,140,233,.24); }
+
+    .runlayer-core {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: none;
+      gap: 7px;
+      justify-items: center;
+      pointer-events: none;
+      color: rgba(247, 255, 252, 0.92);
+      text-align: center;
+      text-shadow: 0 0 18px rgba(104, 255, 206, 0.38);
+    }
+
+    .runlayer-core strong {
+      font-size: clamp(13px, 1.4vw, 18px);
+      font-weight: 650;
+      letter-spacing: 0.16em;
+    }
+
+    .runlayer-core span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #7affc7;
+      box-shadow:
+        0 0 10px rgba(122, 255, 199, 0.9),
+        0 0 28px rgba(122, 255, 199, 0.46);
+    }
+
+    .runlayer-core small {
+      font-size: clamp(8px, 0.8vw, 10px);
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: rgba(205, 232, 225, 0.64);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .runlayer-core {
+        text-shadow: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .lil-gui.root { top: auto; left: 8px; right: 8px; bottom: 58px; width: auto !important; max-height: 40vh; }
+      .experiment-tabs { right: 8px; bottom: 8px; left: 8px; justify-content: center; transform: none; overflow-x: auto; }
+      .experiment-tabs button { flex: 0 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="runlayer-core" aria-hidden="true">
+    <span></span>
+    <strong>RUNLAYER</strong>
+    <small>CONTROL PLANE</small>
+  </div>
+  <nav class="experiment-tabs" aria-label="Animation experiments">
+    <button type="button" data-experiment="logo">Logo Resolve</button>
+    <button type="button" data-experiment="network">Policy Network</button>
+    <button type="button" data-experiment="plasma">Plane Funnel</button>
+    <button type="button" data-experiment="shards">Agent Graph</button>
+  </nav>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

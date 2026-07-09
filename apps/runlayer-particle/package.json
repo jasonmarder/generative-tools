@@ -1,0 +1,19 @@
+{
+  "name": "runlayer-particle-orb",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "dev:logo": "vite logo-resolve --port 3001"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "lil-gui": "^0.20.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "@types/three": "^0.170.0",
+    "typescript": "^5.7.0"
+  }
+}

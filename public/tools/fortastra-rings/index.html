@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orbital Ring Generator</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background-color: #000;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    color: #fff;
+  }
+  canvas#scene { display: block; width: 100vw; height: 100vh; background: transparent; }
+  .hud {
+    position: fixed; inset: 0; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 24px 28px; font-size: 10px; letter-spacing: 0.24em;
+    text-transform: uppercase; color: rgba(255, 255, 255, 0.45);
+  }
+  .hud .row { display: flex; justify-content: space-between; align-items: baseline; }
+  .hud .brand { letter-spacing: 0.32em; color: rgba(255, 255, 255, 0.8); }
+  .lil-gui {
+    --background-color: rgba(20, 20, 20, 0.96);
+    --text-color: rgba(255, 255, 255, 0.9);
+    --title-background-color: transparent;
+    --title-text-color: #fff;
+    --widget-color: rgba(255, 255, 255, 0.075);
+    --hover-color: rgba(255, 255, 255, 0.11);
+    --focus-color: rgba(255, 255, 255, 0.14);
+    --number-color: #70b0fa;
+    --string-color: #70b0fa;
+    --font-size: 12px;
+    --input-font-size: 12px;
+    --widget-height: 28px;
+    --name-width: 46%;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+  }
+  .lil-gui.root {
+    top: 12px;
+    right: 12px;
+    width: 312px !important;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(18px) saturate(120%);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.16) transparent;
+  }
+  .lil-gui .title {
+    height: 36px;
+    padding: 0 12px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 36px;
+  }
+  .lil-gui .children { border-left: 0; }
+  .lil-gui .controller { min-height: 34px; padding: 3px 10px; }
+  .lil-gui .controller .name { color: rgba(255,255,255,.64); }
+  .lil-gui input, .lil-gui select { border-radius: 4px; }
+  .lil-gui .controller.function .widget { color: rgba(255,255,255,.92); font-weight: 600; }
+  .lil-gui .controller.function:hover .widget { background: rgba(12,140,233,.28); }
+
+  @media (max-width: 720px) {
+    .lil-gui.root { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto !important; max-height: 44vh; }
+    .hud { padding: 16px; }
+    .hud .row:last-child { padding-bottom: 45vh; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="hud">
+  <div class="row">
+    <span class="brand">Orbital Rings // Generator</span>
+    <span id="seed-label">SEED —</span>
+  </div>
+  <div class="row">
+    <span>drag to rotate • scroll to zoom</span>
+    <span id="counts">—</span>
+  </div>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+    "lil-gui": "https://unpkg.com/lil-gui@0.19.2/dist/lil-gui.esm.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import GUI from 'lil-gui';
+
+// --- Seeded PRNG ---------------------------------------------------------
+function mulberry32(a) {
+  return function () {
+    let t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// --- Params --------------------------------------------------------------
+const params = {
+  seed: 42,
+  ringCount: 4,
+  innerRadius: 1.6,
+  radiusStep: 0.9,
+  radiusJitter: 0.25,
+  lineThickness: 0.028,
+  tiltStrength: 1.0,
+  spinSpeed: 0.3,
+  spinJitter: 0.8,
+  bleedRadius: 8.0,
+  threshold: 0.28,
+  softness: 0.04,
+  color: '#ffffff',
+  strokeMode: 'solid',
+  hashLength: 0.12,
+  hashGap: 0.08,
+  showGrid: true,
+  exportScale: 2,
+  exportBg: false,
+  exportGrid: false,
+  randomize() {
+    params.seed = Math.floor(Math.random() * 999999);
+    seedCtrl.updateDisplay();
+    rebuild();
+  },
+  exportPNG() { exportPNG(); },
+  exportSVG() { exportSVG(); },
+};
+
+// --- Renderer / Scene ----------------------------------------------------
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: true, alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true,
+});
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+scene.background = null;
+
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+camera.position.set(0, 0.6, 9);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.rotateSpeed = 0.6;
+controls.zoomSpeed = 0.5;
+controls.minDistance = 3;
+controls.maxDistance = 40;
+
+const group = new THREE.Group();
+scene.add(group);
+
+// --- Postprocess: blur + goo threshold -----------------------------------
+const blurShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    resolution: { value: new THREE.Vector2() },
+    direction: { value: new THREE.Vector2(1, 0) },
+    radius: { value: 6.0 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform vec2 resolution;
+    uniform vec2 direction;
+    uniform float radius;
+    varying vec2 vUv;
+    void main() {
+      vec2 px = direction / resolution;
+      vec4 sum = vec4(0.0);
+      float wSum = 0.0;
+      float sigma = max(radius * 0.5, 0.0001);
+      for (float i = -12.0; i <= 12.0; i += 1.0) {
+        float w = exp(-(i * i) / (2.0 * sigma * sigma));
+        sum += texture2D(tDiffuse, vUv + px * i * (radius / 12.0)) * w;
+        wSum += w;
+      }
+      gl_FragColor = sum / wSum;
+    }
+  `,
+};
+
+const gooShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    threshold: { value: 0.3 },
+    softness: { value: 0.04 },
+    color: { value: new THREE.Color('#ffffff') },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float threshold;
+    uniform float softness;
+    uniform vec3 color;
+    varying vec2 vUv;
+    void main() {
+      vec4 s = texture2D(tDiffuse, vUv);
+      float l = max(max(s.r, s.g), s.b);
+      float a = smoothstep(threshold - softness, threshold + softness, l);
+      gl_FragColor = vec4(color * a, a);
+    }
+  `,
+};
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const blurH = new ShaderPass(blurShader);
+const blurV = new ShaderPass(blurShader);
+blurH.material.uniforms.direction.value = new THREE.Vector2(1, 0);
+blurV.material.uniforms.direction.value = new THREE.Vector2(0, 1);
+composer.addPass(blurH);
+composer.addPass(blurV);
+const goo = new ShaderPass(gooShader);
+composer.addPass(goo);
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  blurH.material.uniforms.resolution.value.set(w, h);
+  blurV.material.uniforms.resolution.value.set(w, h);
+}
+window.addEventListener('resize', resize);
+
+// --- Build ---------------------------------------------------------------
+function disposeGroup(g) {
+  const trash = [];
+  g.traverse(o => {
+    if (o.geometry) trash.push(o.geometry);
+    if (o.material) trash.push(o.material);
+  });
+  trash.forEach(x => x.dispose && x.dispose());
+  while (g.children.length) g.remove(g.children[0]);
+}
+
+function buildRingGeometry(radius, tube) {
+  if (params.strokeMode === 'solid') {
+    return new THREE.TorusGeometry(radius, tube, 12, 256);
+  }
+  const hashLen = Math.max(0, params.hashLength);
+  const gapLen = Math.max(0.001, params.hashGap);
+  const pattern = Math.max(0.001, hashLen + gapLen);
+  const circ = 2 * Math.PI * radius;
+  const n = Math.max(2, Math.floor(circ / pattern));
+  const step = (Math.PI * 2) / n;
+  const hashArc = step * (hashLen / pattern);
+  const isDot = hashLen < 0.01;
+
+  const geos = [];
+  for (let i = 0; i < n; i++) {
+    const start = i * step;
+    if (isDot) {
+      const s = new THREE.SphereGeometry(tube, 10, 8);
+      s.translate(Math.cos(start) * radius, Math.sin(start) * radius, 0);
+      geos.push(s);
+    } else {
+      const seg = Math.max(4, Math.ceil(hashArc * 32));
+      const arc = new THREE.TorusGeometry(radius, tube, 8, seg, hashArc);
+      arc.rotateZ(start);
+      geos.push(arc);
+    }
+  }
+  return mergeGeometries(geos, false);
+}
+
+function build() {
+  const rand = mulberry32(params.seed);
+  const {
+    ringCount, innerRadius, radiusStep, radiusJitter,
+    lineThickness, tiltStrength, spinSpeed, spinJitter,
+  } = params;
+
+  for (let i = 0; i < ringCount; i++) {
+    const jitter = (rand() - 0.5) * 2 * radiusJitter;
+    const radius = innerRadius + radiusStep * i + jitter * radiusStep;
+
+    const geo = buildRingGeometry(radius, Math.max(0.0001, lineThickness));
+    geo.parameters = { radius };
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      depthWrite: false,
+    });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.rotation.set(
+      (rand() - 0.5) * Math.PI * tiltStrength,
+      (rand() - 0.5) * Math.PI * tiltStrength,
+      (rand() - 0.5) * Math.PI * tiltStrength,
+    );
+
+    const axis = new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize();
+    const dir = rand() < 0.5 ? -1 : 1;
+    const speed = spinSpeed * (1 + (rand() - 0.5) * 2 * spinJitter) * dir;
+    ring.userData.axis = axis;
+    ring.userData.speed = speed;
+
+    group.add(ring);
+  }
+
+  document.getElementById('seed-label').textContent =
+    `SEED // ${String(params.seed).padStart(6, '0')}`;
+  document.getElementById('counts').textContent = `${params.ringCount} RINGS`;
+}
+
+function rebuild() {
+  disposeGroup(group);
+  build();
+}
+
+// --- Export --------------------------------------------------------------
+function exportPNG() {
+  const scale = Math.max(1, Math.round(params.exportScale));
+  const w = window.innerWidth, h = window.innerHeight;
+  const sw = Math.round(w * scale), sh = Math.round(h * scale);
+  const prevPR = renderer.getPixelRatio();
+  const prevBlur = blurH.material.uniforms.radius.value;
+
+  renderer.setPixelRatio(1);
+  renderer.setSize(sw, sh, false);
+  composer.setSize(sw, sh);
+  camera.aspect = sw / sh;
+  camera.updateProjectionMatrix();
+  blurH.material.uniforms.resolution.value.set(sw, sh);
+  blurV.material.uniforms.resolution.value.set(sw, sh);
+  blurH.material.uniforms.radius.value = prevBlur * scale;
+  blurV.material.uniforms.radius.value = prevBlur * scale;
+
+  composer.render();
+
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orbital-rings-${params.seed}@${scale}x.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    // Restore viewport rendering
+    renderer.setPixelRatio(prevPR);
+    renderer.setSize(w, h, false);
+    composer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    blurH.material.uniforms.resolution.value.set(w, h);
+    blurV.material.uniforms.resolution.value.set(w, h);
+    blurH.material.uniforms.radius.value = prevBlur;
+    blurV.material.uniforms.radius.value = prevBlur;
+  }, 'image/png');
+}
+
+function exportSVG() {
+  const scale = Math.max(1, Math.round(params.exportScale));
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const w = vw * scale, h = vh * scale;
+
+  const fovRad = THREE.MathUtils.degToRad(camera.fov);
+  const pxPerUnit = h / (2 * camera.position.length() * Math.tan(fovRad / 2));
+  const strokeWidth = Math.max(0.0001, params.lineThickness) * 2 * pxPerUnit;
+
+  group.updateMatrixWorld(true);
+  const samples = 64;
+  const p = new THREE.Vector3();
+  const shapes = [];
+
+  for (const ring of group.children) {
+    const r = ring.geometry.parameters.radius;
+    const pts = [];
+    for (let s = 0; s < samples; s++) {
+      const a = (s / samples) * Math.PI * 2;
+      p.set(Math.cos(a) * r, Math.sin(a) * r, 0);
+      p.applyMatrix4(ring.matrixWorld);
+      p.project(camera);
+      pts.push([(p.x * 0.5 + 0.5) * w, (-p.y * 0.5 + 0.5) * h]);
+    }
+    const ell = fitEllipse(pts);
+    if (!ell) continue;
+    const deg = ell.theta * 180 / Math.PI;
+    shapes.push(
+      `<ellipse cx="${ell.cx.toFixed(2)}" cy="${ell.cy.toFixed(2)}" rx="${ell.rx.toFixed(2)}" ry="${ell.ry.toFixed(2)}" transform="rotate(${deg.toFixed(3)} ${ell.cx.toFixed(2)} ${ell.cy.toFixed(2)})"/>`
+    );
+  }
+
+  let dashAttrs = '';
+  if (params.strokeMode === 'dashed') {
+    const isDot = params.hashLength < 0.01;
+    const pxHash = Math.max(0, params.hashLength * pxPerUnit);
+    const pxGap = Math.max(1, params.hashGap * pxPerUnit);
+    if (isDot) {
+      dashAttrs = ` stroke-dasharray="0 ${pxGap.toFixed(2)}" stroke-linecap="round"`;
+    } else {
+      dashAttrs = ` stroke-dasharray="${pxHash.toFixed(2)} ${pxGap.toFixed(2)}"`;
+    }
+  }
+
+  const bg = params.exportBg ? `  <rect width="100%" height="100%" fill="#000"/>\n` : '';
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+${bg}  <g fill="none" stroke="${params.color}" stroke-width="${strokeWidth.toFixed(2)}"${dashAttrs}>
+${shapes.map(s => '    ' + s).join('\n')}
+  </g>
+</svg>`;
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `orbital-rings-${params.seed}@${scale}x.svg`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// Algebraic least-squares ellipse fit (F = -1 normalization).
+// Returns { cx, cy, rx, ry, theta } in radians, or null if points don't fit an ellipse.
+function fitEllipse(pts) {
+  const M = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]];
+  const b = [0,0,0,0,0];
+  for (const [x, y] of pts) {
+    const r = [x*x, x*y, y*y, x, y];
+    for (let i = 0; i < 5; i++) {
+      b[i] += r[i];
+      for (let j = 0; j < 5; j++) M[i][j] += r[i] * r[j];
+    }
+  }
+  const A = M.map((row, i) => [...row, b[i]]);
+  for (let k = 0; k < 5; k++) {
+    let piv = k;
+    for (let i = k + 1; i < 5; i++) if (Math.abs(A[i][k]) > Math.abs(A[piv][k])) piv = i;
+    [A[k], A[piv]] = [A[piv], A[k]];
+    if (Math.abs(A[k][k]) < 1e-12) return null;
+    for (let i = k + 1; i < 5; i++) {
+      const f = A[i][k] / A[k][k];
+      for (let j = k; j <= 5; j++) A[i][j] -= f * A[k][j];
+    }
+  }
+  const v = new Array(5);
+  for (let i = 4; i >= 0; i--) {
+    let s = A[i][5];
+    for (let j = i + 1; j < 5; j++) s -= A[i][j] * v[j];
+    v[i] = s / A[i][i];
+  }
+  const [cA, cB, cC, cD, cE] = v, cF = -1;
+  const disc = 4 * cA * cC - cB * cB;
+  if (disc <= 0) return null;
+  const cx = (cB * cE - 2 * cC * cD) / disc;
+  const cy = (cB * cD - 2 * cA * cE) / disc;
+  const Fp = cF + cA*cx*cx + cB*cx*cy + cC*cy*cy + cD*cx + cE*cy;
+  const theta = 0.5 * Math.atan2(cB, cA - cC);
+  const co = Math.cos(theta), si = Math.sin(theta);
+  const Ap = cA*co*co + cB*co*si + cC*si*si;
+  const Cp = cA*si*si - cB*co*si + cC*co*co;
+  const rx = Math.sqrt(Math.max(0, -Fp / Ap));
+  const ry = Math.sqrt(Math.max(0, -Fp / Cp));
+  return { cx, cy, rx, ry, theta };
+}
+
+// --- GUI -----------------------------------------------------------------
+const gui = new GUI({ title: 'Orbital Ring Generator', width: 300 });
+
+gui.add(params, 'lineThickness').name('Line Thickness').onChange(rebuild);
+
+const fStroke = gui.addFolder('Stroke');
+fStroke.add(params, 'strokeMode', ['solid', 'dashed']).name('Mode').onChange(rebuild);
+fStroke.add(params, 'hashLength').name('Hash Length').onChange(rebuild);
+fStroke.add(params, 'hashGap').name('Hash Gap').onChange(rebuild);
+
+const fGeom = gui.addFolder('Geometry');
+fGeom.add(params, 'ringCount', 1, 12, 1).onChange(rebuild);
+fGeom.add(params, 'innerRadius', 0.2, 4, 0.05).onChange(rebuild);
+fGeom.add(params, 'radiusStep', 0.05, 2, 0.01).onChange(rebuild);
+fGeom.add(params, 'radiusJitter', 0, 1, 0.01).onChange(rebuild);
+fGeom.add(params, 'tiltStrength', 0, 2, 0.01).onChange(rebuild);
+
+const fMot = gui.addFolder('Motion');
+fMot.add(params, 'spinSpeed', 0, 2, 0.01).onChange(rebuild);
+fMot.add(params, 'spinJitter', 0, 1, 0.01).onChange(rebuild);
+
+const fBleed = gui.addFolder('Bleed');
+fBleed.add(params, 'bleedRadius', 0, 24, 0.1).onChange(v => {
+  blurH.material.uniforms.radius.value = v;
+  blurV.material.uniforms.radius.value = v;
+});
+fBleed.add(params, 'threshold', 0.01, 0.9, 0.005).onChange(v => {
+  goo.material.uniforms.threshold.value = v;
+});
+fBleed.add(params, 'softness', 0.001, 0.3, 0.001).onChange(v => {
+  goo.material.uniforms.softness.value = v;
+});
+fBleed.addColor(params, 'color').onChange(v => {
+  goo.material.uniforms.color.value.set(v);
+});
+
+const fAct = gui.addFolder('Actions');
+const seedCtrl = fAct.add(params, 'seed', 0, 999999, 1).onChange(rebuild);
+fAct.add(params, 'randomize').name('🎲 Randomize');
+
+const fExp = gui.addFolder('Export');
+fExp.add(params, 'exportScale', [1, 2, 3, 4]).name('PNG Scale');
+fExp.add(params, 'exportBg').name('SVG: Black BG');
+fExp.add(params, 'exportGrid').name('SVG: Grid');
+fExp.add(params, 'showGrid').name('Preview Grid').onChange(v => {
+  document.body.style.backgroundImage = v
+    ? `linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)`
+    : 'none';
+});
+fExp.add(params, 'exportPNG').name('⬇ Export PNG');
+fExp.add(params, 'exportSVG').name('⬇ Export SVG');
+
+// --- Init ----------------------------------------------------------------
+blurH.material.uniforms.radius.value = params.bleedRadius;
+blurV.material.uniforms.radius.value = params.bleedRadius;
+goo.material.uniforms.threshold.value = params.threshold;
+goo.material.uniforms.softness.value = params.softness;
+goo.material.uniforms.color.value.set(params.color);
+
+resize();
+build();
+
+const clock = new THREE.Clock();
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  group.children.forEach(r => {
+    if (r.userData.axis) r.rotateOnAxis(r.userData.axis, r.userData.speed * dt);
+  });
+  controls.update();
+  composer.render();
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>
