@@ -16,6 +16,11 @@
   --focus: rgba(112, 176, 250, 0.78);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --tool-crossfade-duration: 240ms; /* switch: incoming iframe opacity/blur settle */
+  --tool-first-load-duration: 320ms; /* first paint: initial tool's arrival fade-in */
+  --tool-blur-settle: 1.5px; /* shared blur amount for arrive/crossfade settle, matches prior is-arriving value */
+  --tool-dot-pulse-duration: 1200ms; /* dock status dot loading pulse cycle */
+  --tool-load-fallback: 4000ms; /* max wait for incoming iframe load before forcing the crossfade */
 }
 
 * {
@@ -43,32 +48,39 @@ button {
 }
 
 .tool-frame {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   border: 0;
   background: #080808;
   opacity: 1;
-  transform: scale(1);
   filter: blur(0);
+  pointer-events: auto;
+  will-change: opacity, filter;
+}
+
+/* Resting/hidden state for whichever frame isn't the visible, interactive one:
+   the boot frame before its first load, and either frame while it's the buffer. */
+.tool-frame.is-buffer {
+  opacity: 0;
+  filter: blur(var(--tool-blur-settle));
+  pointer-events: none;
+}
+
+/* Applied to the buffer frame for the duration of a switch crossfade. */
+.tool-frame.is-transitioning {
   transition:
-    opacity 180ms var(--ease-out),
-    transform 180ms var(--ease-out),
-    filter 180ms var(--ease-out);
-  will-change: opacity, transform, filter;
+    opacity var(--tool-crossfade-duration) var(--ease-out),
+    filter var(--tool-crossfade-duration) var(--ease-out);
 }
 
-.tool-frame.is-leaving {
-  opacity: 0.58;
-  transform: scale(0.998);
-  filter: blur(1.5px);
-  transition-duration: 95ms;
-}
-
-.tool-frame.is-arriving {
-  opacity: 0.24;
-  transform: scale(1.002);
-  filter: blur(1.5px);
+/* Applied once, to the boot frame, for the composed first-paint arrival. */
+.tool-frame.is-first-load {
+  transition:
+    opacity var(--tool-first-load-duration) var(--ease-out),
+    filter var(--tool-first-load-duration) var(--ease-out);
 }
 
 .dock {
@@ -138,6 +150,26 @@ button {
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 3px rgba(112, 176, 250, 0.11);
+}
+
+@keyframes dock-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Loading affordance while the incoming tool is buffering. */
+.dock-status.is-loading {
+  animation: dock-status-pulse var(--tool-dot-pulse-duration) var(--ease-in-out) infinite;
+}
+
+/* Reduced-motion equivalent: a static dim instead of a pulse. */
+.dock-status.is-loading-static {
+  opacity: 0.45;
 }
 
 .dock-current {
@@ -234,11 +266,14 @@ button {
   color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
-  transform: translateY(4px);
+  /* translate (not transform) so the enter animation composes independently
+     from the :active press below — they'd otherwise fight over `transform`. */
+  translate: 0 4px;
   text-align: left;
+  text-decoration: none;
   transition:
     opacity 110ms var(--ease-out),
-    transform 110ms var(--ease-out),
+    translate 110ms var(--ease-out),
     color 140ms ease,
     background-color 140ms ease;
   -webkit-tap-highlight-color: transparent;
@@ -246,7 +281,7 @@ button {
 
 .dock[data-open="true"] .dock-option {
   opacity: 1;
-  transform: translateY(0);
+  translate: 0 0;
   transition-delay:
     calc(var(--item-index) * 18ms),
     calc(var(--item-index) * 18ms),
@@ -255,7 +290,7 @@ button {
 }
 
 .dock-option:active {
-  transform: scale(0.97);
+  scale: 0.97;
 }
 
 .dock-option[aria-checked="true"] {
@@ -370,30 +405,37 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tool-frame {
-    transform: none;
-    filter: none;
-    transition: opacity 100ms ease;
+  /* Belt-and-suspenders: main.js already skips adding these classes under
+     reduced motion (it snaps straight to the resting state instead), but
+     neutralize the transitions here too so nothing can animate by accident. */
+  .tool-frame.is-transitioning,
+  .tool-frame.is-first-load {
+    transition: none;
   }
 
-  .tool-frame.is-leaving,
-  .tool-frame.is-arriving {
-    transform: none;
-    filter: none;
+  .dock-status.is-loading {
+    animation: none;
   }
 
-  .dock-trigger:active,
+  .dock-trigger:active {
+    transform: none;
+  }
+
   .dock-option:active {
-    transform: none;
+    scale: none;
   }
 
   .dock-menu,
   .dock[data-open="true"] .dock-menu,
-  .dock-option,
-  .dock[data-open="true"] .dock-option,
   .dock-chevron,
   .dock[data-open="true"] .dock-chevron {
     transform: none;
+    transition-delay: 0ms;
+  }
+
+  .dock-option,
+  .dock[data-open="true"] .dock-option {
+    translate: none;
     transition-delay: 0ms;
   }
 }
