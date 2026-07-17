@@ -43,6 +43,16 @@
       ></iframe>
     </main>
 
+    <!--
+      Transparent click-catcher over the stage, present only while the menu
+      is open (see main.js's setMenuOpen and styles.css's .stage-scrim for
+      why: the tool iframes are a separate browsing context, so a click on
+      the canvas never reaches this document's click-outside listeners
+      without something non-iframe sitting in front of it to catch it).
+      `hidden` by default so it never intercepts normal tool interaction.
+    -->
+    <div class="stage-scrim" id="stage-scrim" aria-hidden="true" hidden></div>
+
     <div class="dock" data-open="false" data-instant="false">
       <div
         class="dock-menu"

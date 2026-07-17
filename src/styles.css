@@ -83,6 +83,21 @@ button {
     filter var(--tool-first-load-duration) var(--ease-out);
 }
 
+/* Sits above the tool frames (z-index 1/2, set inline by main.js) but below
+   the dock (z-index 1000), so the dock stays fully interactive while this
+   swallows every other click on the stage. Fully transparent by design —
+   this isn't a dimming scrim, purely a hit-testable surface: real DOM
+   elements catch pointer events, iframe contents never do (they're a
+   separate browsing context), which is the whole reason main.js's
+   click-outside-closes-menu listener needs this to exist at all. */
+.stage-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
+  cursor: default;
+}
+
 .dock {
   position: fixed;
   z-index: 1000;

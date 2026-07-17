@@ -9,6 +9,7 @@
     <style>
         :root { color-scheme: dark; }
         * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             margin: 0;
             padding: 0;
@@ -24,51 +25,118 @@
             background: #141414;
             box-shadow: 0 20px 80px rgba(0,0,0,.48);
         }
+        #canvas-container canvas {
+            display: block !important;
+            width: auto !important;
+            height: auto !important;
+            max-width: calc(100vw - 32px) !important;
+            max-height: calc(100vh - 32px) !important;
+        }
+
+        /* ---- Panel skin: matches the lil-gui reference panel (fortastra-rings) ---- */
         .dg.ac {
             z-index: 1000 !important;
             position: fixed !important;
             top: 12px !important;
             right: 12px !important;
             left: auto !important;
-            bottom: 12px;
+            bottom: 12px !important;
             width: 312px !important;
+            max-height: calc(100vh - 24px);
             height: auto !important;
             overflow: auto;
             pointer-events: none;
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,.16) transparent;
         }
+        .dg.ac::-webkit-scrollbar { width: 5px; }
+        .dg.ac::-webkit-scrollbar-track { background: transparent; }
+        .dg.ac::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
         .dg.ac > .dg.main {
             float: none !important;
             width: 312px !important;
             border: 1px solid rgba(255,255,255,.12);
             border-radius: 8px;
-            overflow: hidden;
             background: rgba(20,20,20,.96);
-            box-shadow: 0 20px 56px rgba(0,0,0,.46);
+            box-shadow: 0 20px 56px rgba(0,0,0,.45);
             backdrop-filter: blur(18px) saturate(120%);
             pointer-events: auto;
         }
         .dg { color: rgba(255,255,255,.9); font: 12px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", Arial, sans-serif; text-shadow: none; }
-        .dg.main .close-button { position: sticky; bottom: 0; width: 100% !important; height: 32px; border-top: 1px solid rgba(255,255,255,.1); background: #1b1b1b; color: rgba(255,255,255,.58); line-height: 32px; }
-        .dg.main .close-button:hover { background: #242424; color: white; }
+
+        /* Native dat.gui "Close Controls" bar is replaced by .gui-panel-title below */
+        .dg.main > .close-button { display: none !important; }
+
+        /* Custom title bar: click collapses/expands the WHOLE panel (dat.gui's root
+           GUI has no built-in title row, unlike lil-gui, so this is added in JS
+           and driven by the .panel-closed class toggled on .dg.main). */
+        .dg.main .gui-panel-title {
+            position: relative;
+            height: 36px;
+            padding: 0 12px 0 26px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 36px;
+            color: #fff;
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dg.main .gui-panel-title::before {
+            content: "⌄";
+            position: absolute;
+            left: 10px;
+            top: 0;
+            color: rgba(255,255,255,.58);
+            font-size: 12px;
+            line-height: 36px;
+        }
+        .dg.main.panel-closed .gui-panel-title::before { content: "›"; }
+        .dg.main.panel-closed .gui-panel-title { border-bottom: 0; }
+        .dg.main.panel-closed > ul { display: none !important; }
+
+        /* Folder rows behave like lil-gui folder titles */
         .dg .cr, .dg li.title { border-left: 0 !important; border-bottom: 1px solid rgba(255,255,255,.075); background: transparent; }
-        .dg li.title { position: relative; height: 36px; padding-left: 26px; background: rgba(255,255,255,.018) !important; background-image: none !important; font-size: 12px; font-weight: 600; line-height: 36px; }
+        .dg li.title { position: relative; height: 36px; padding-left: 26px; background: rgba(255,255,255,.018) !important; background-image: none !important; font-size: 13px; font-weight: 600; letter-spacing: -0.01em; line-height: 36px; }
         .dg li.title::before { content: "⌄"; position: absolute; left: 10px; top: 0; color: rgba(255,255,255,.58); font-size: 12px; }
         .dg ul.closed > li.title::before { content: "›"; }
+
+        /* Controller rows (sliders, text, checkboxes, color, buttons) */
         .dg .cr { min-height: 34px; padding: 3px 10px; }
         .dg .property-name { color: rgba(255,255,255,.64); line-height: 28px; }
-        .dg .c input[type=text] { height: 26px; border-radius: 4px; background: rgba(255,255,255,.075); color: #70b0fa; }
-        .dg .c .slider { height: 4px; margin-top: 12px; border-radius: 999px; background: rgba(255,255,255,.1); }
+        .dg input, .dg select { border-radius: 4px; }
+        .dg .c input[type=text] { height: 26px; border-radius: 4px; background: rgba(255,255,255,.075); color: #70b0fa; border: 0; outline: none; }
+        .dg .c input[type=text]:hover { background: rgba(255,255,255,.11); }
+        .dg .c input[type=text]:focus { background: rgba(255,255,255,.14); color: #fff; }
+        .dg .c .slider { height: 4px; margin-top: 12px; border-radius: 999px; background: rgba(255,255,255,.1); cursor: ew-resize; }
+        .dg .c .slider:hover { background: rgba(255,255,255,.14); }
         .dg .c .slider-fg { border-radius: inherit; background: #0c8ce9; }
-        .dg .cr.function .property-name { width: 100%; color: rgba(255,255,255,.9); font-weight: 600; text-align: center; }
-        .dg .cr.function:hover { background: rgba(12,140,233,.2); }
+        .dg .c .slider-fg:hover { background: #0c8ce9; }
+        .dg .cr.function .property-name { width: 100%; color: rgba(255,255,255,.92); font-weight: 600; text-align: center; }
+        .dg .cr.function:hover { background: rgba(12,140,233,.28); }
+
+        /* Closed folders must actually collapse: the rules above give every .cr row
+           a 34px min-height so it always renders even when its parent <ul> carries
+           dat.gui's own ".closed" class (which only zeroes the *unminned* height).
+           This override removes the floor so collapsed rows truly disappear. */
+        .dg .closed .cr,
+        .dg .closed li:not(.title) {
+            min-height: 0 !important;
+            height: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            overflow: hidden !important;
+        }
 
         @media (max-width: 720px) {
-            .dg.ac { top: auto !important; left: 8px !important; right: 8px !important; bottom: 8px; width: auto !important; max-height: 45vh; }
+            .dg.ac { top: auto !important; left: 8px !important; right: 8px !important; bottom: 8px !important; width: auto !important; max-height: 44vh; }
             .dg.ac > .dg.main { width: 100% !important; }
-            #canvas-container { width: 100vw; overflow: hidden; }
-            #canvas-container canvas { display: block; width: 100% !important; height: auto !important; }
         }
     </style>
 </head>

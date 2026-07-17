@@ -35,24 +35,24 @@ body {
     #080808;
 }
 
+/* Panel colors, radii, font and sizing are themed via <Leva theme={...}> in
+   App.tsx. These residual rules cover the handful of properties leva's theme
+   tokens don't expose (fixed-position offset, blur, shadow, scrollbar, title
+   border) so the panel matches the fortastra-rings lil-gui reference skin. */
 .leva-c-kWgxhW {
   top: 12px !important;
   right: 12px !important;
-  width: 312px !important;
   max-height: calc(100vh - 24px) !important;
   overflow: auto !important;
   border: 1px solid rgba(255,255,255,.12) !important;
-  border-radius: 8px !important;
-  background: rgba(20,20,20,.96) !important;
-  box-shadow: 0 20px 56px rgba(0,0,0,.46) !important;
+  box-shadow: 0 20px 56px rgba(0,0,0,.45) !important;
   backdrop-filter: blur(18px) saturate(120%) !important;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.16) transparent;
 }
 
-.leva-c-hwBXYF { position: relative !important; height: 36px !important; border-bottom: 1px solid rgba(255,255,255,.1); }
-.leva-c-hwBXYF::after { content: "Circuit Generator"; position: absolute; left: 28px; top: 0; color: rgba(255,255,255,.92); font: 600 13px/36px Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: -.01em; pointer-events: none; }
-.leva-c-iLtnIm { visibility: hidden !important; }
+.leva-c-hwBXYF { border-bottom: 1px solid rgba(255,255,255,.1); }
+.leva-c-iLtnIm { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
 
 .circuit-stage {
   position: relative;

@@ -40,14 +40,12 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="controls-panel">
-        <Controls
-          settings={settings}
-          onSettingsChange={handleSettingsChange}
-          onGenerateShapes={handleGenerateShapes}
-          onExportSvg={handleExportSvg}
-        />
-      </div>
+      <Controls
+        settings={settings}
+        onSettingsChange={handleSettingsChange}
+        onGenerateShapes={handleGenerateShapes}
+        onExportSvg={handleExportSvg}
+      />
       <div className="preview-window">
         <IsometricGrid
           ref={gridRef}

@@ -383,7 +383,19 @@ function drawCircle(x, y, sizeMult, isStroked) {
 
 function setupGUI() {
   if (gui) gui.destroy();
-  gui = new dat.GUI({ width: 320 });
+  gui = new dat.GUI({ width: 320, scrollable: false });
+
+  // dat.gui's root panel has no built-in title row (only folders get one), so
+  // add a custom title bar that doubles as the whole-panel collapse toggle —
+  // matching the lil-gui reference panel where clicking the title
+  // collapses/expands everything below it.
+  const titleBar = document.createElement('div');
+  titleBar.className = 'gui-panel-title';
+  titleBar.textContent = 'Organic Pattern Generator';
+  gui.domElement.insertBefore(titleBar, gui.domElement.firstChild);
+  titleBar.addEventListener('click', () => {
+    gui.domElement.classList.toggle('panel-closed');
+  });
 
   const gridF = gui.addFolder('Grid');
   gridF.add(params, 'cols', 10, 100, 1).onChange(drawPattern);

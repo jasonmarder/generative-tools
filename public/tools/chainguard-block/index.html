@@ -8,12 +8,9 @@
       :root {
         color-scheme: dark;
         --tc-bg: #080808;
-        --tc-panel: rgba(20, 20, 20, 0.96);
-        --tc-panel-raised: #242424;
-        --tc-border: rgba(255, 255, 255, 0.12);
         --tc-text: rgba(255, 255, 255, 0.92);
         --tc-muted: rgba(255, 255, 255, 0.48);
-        --tc-accent: #0c8ce9;
+        --tc-accent: #70b0fa;
         --tc-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif;
       }
 
@@ -21,67 +18,84 @@
       html, body { margin: 0; height: 100%; background: var(--tc-bg); color: var(--tc-text); font-family: var(--tc-font); }
       body { overflow: hidden; }
       .wrap { position: relative; height: 100%; }
+
+      /* Panel chrome matches the lil-gui skin used across the tool suite (see fortastra-rings). */
       .pane {
         --tp-base-background-color: transparent;
+        --tp-base-border-radius: 0px;
+        --tp-base-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif;
         --tp-base-shadow-color: transparent;
-        --tp-button-background-color: rgba(255, 255, 255, 0.08);
-        --tp-button-background-color-active: rgba(255, 255, 255, 0.16);
-        --tp-button-background-color-focus: rgba(255, 255, 255, 0.13);
-        --tp-button-background-color-hover: rgba(255, 255, 255, 0.12);
-        --tp-button-foreground-color: var(--tc-text);
-        --tp-container-background-color: rgba(255, 255, 255, 0.025);
-        --tp-container-background-color-active: rgba(255, 255, 255, 0.08);
-        --tp-container-background-color-focus: rgba(255, 255, 255, 0.06);
-        --tp-container-background-color-hover: rgba(255, 255, 255, 0.05);
-        --tp-container-foreground-color: var(--tc-text);
-        --tp-groove-foreground-color: var(--tc-accent);
-        --tp-input-background-color: rgba(255, 255, 255, 0.07);
-        --tp-input-background-color-active: rgba(255, 255, 255, 0.12);
-        --tp-input-background-color-focus: rgba(255, 255, 255, 0.1);
-        --tp-input-background-color-hover: rgba(255, 255, 255, 0.09);
-        --tp-input-foreground-color: var(--tc-text);
-        --tp-label-foreground-color: rgba(255, 255, 255, 0.67);
+        --tp-blade-border-radius: 4px;
+        --tp-button-background-color: rgba(255, 255, 255, 0.075);
+        --tp-button-background-color-active: rgba(255, 255, 255, 0.14);
+        --tp-button-background-color-focus: rgba(255, 255, 255, 0.14);
+        --tp-button-background-color-hover: rgba(255, 255, 255, 0.11);
+        --tp-button-foreground-color: rgba(255, 255, 255, 0.92);
+        --tp-container-background-color: rgba(255, 255, 255, 0.075);
+        --tp-container-background-color-active: rgba(255, 255, 255, 0.14);
+        --tp-container-background-color-focus: rgba(255, 255, 255, 0.14);
+        --tp-container-background-color-hover: rgba(255, 255, 255, 0.11);
+        --tp-container-foreground-color: rgba(255, 255, 255, 0.92);
+        --tp-container-unit-size: 28px;
+        --tp-groove-foreground-color: #70b0fa;
+        --tp-input-background-color: rgba(255, 255, 255, 0.075);
+        --tp-input-background-color-active: rgba(255, 255, 255, 0.14);
+        --tp-input-background-color-focus: rgba(255, 255, 255, 0.14);
+        --tp-input-background-color-hover: rgba(255, 255, 255, 0.11);
+        --tp-input-foreground-color: #70b0fa;
+        --tp-label-foreground-color: rgba(255, 255, 255, 0.64);
         --tp-monitor-background-color: rgba(0, 0, 0, 0.2);
-        --tp-monitor-foreground-color: var(--tc-accent);
+        --tp-monitor-foreground-color: #70b0fa;
+
         position: fixed;
         z-index: 10;
         top: 12px;
         right: 12px;
-        bottom: 12px;
         width: 312px;
+        max-height: calc(100vh - 24px);
         overflow: auto;
-        border: 1px solid var(--tc-border);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 8px;
-        background: var(--tc-panel);
-        box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+        background: rgba(20, 20, 20, 0.96);
+        box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
         backdrop-filter: blur(18px) saturate(120%);
         scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,.16) transparent;
+        scrollbar-color: rgba(255, 255, 255, .16) transparent;
       }
-      .pane__header {
-        position: sticky;
-        z-index: 4;
-        top: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 36px;
-        padding: 0 12px;
-        border-bottom: 1px solid var(--tc-border);
-        background: rgba(20, 20, 20, 0.96);
-        backdrop-filter: blur(18px);
-      }
-      .pane__title { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
-      .pane__meta { color: var(--tc-muted); font: 500 10px/1 var(--tc-font); letter-spacing: .08em; text-transform: uppercase; }
-      .pane > .tp-dfwv { width: 100% !important; }
+      /* Tweakpane's floating-window wrapper defaults to position:absolute; pull it back
+         into normal flow so it lives inside our fixed, scrollable .pane shell. */
+      .pane > .tp-dfwv { position: static !important; width: 100% !important; }
       .pane .tp-rotv { font-size: 12px; }
-      .pane .tp-fldv_t { min-height: 36px; padding-inline: 10px; font-weight: 600; }
-      .pane .tp-lblv { padding-inline: 10px; }
-      .pane .tp-lblv_l { color: rgba(255,255,255,.62); }
+      /* Root title + folder titles both read as lil-gui "title" rows: 36px, 13px/600. */
+      .pane .tp-rotv_b,
+      .pane .tp-fldv_b {
+        height: 36px !important;
+        line-height: 36px !important;
+        padding: 0 12px !important;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        border-bottom: 1px solid rgba(255, 255, 255, .1);
+        border-radius: 0 !important;
+        background: transparent;
+        text-align: left;
+      }
+      .pane .tp-rotv_m, .pane .tp-fldv_m { opacity: .5; }
+      .pane .tp-lblv { min-height: 34px; padding: 3px 10px; }
+      .pane .tp-lblv_l { color: rgba(255, 255, 255, .64); }
       .pane .tp-btnv_b { min-height: 28px; border-radius: 4px; }
-      .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 24px; }
-      #mount { width: 100%; height: 100%; max-width: 100%; overflow: visible; }
-      #mount svg { display: block; width: 100%; height: 100%; }
+      .pane input, .pane select { border-radius: 4px; }
+      /* Slider: swap tweakpane's thin line+knob for a lil-gui-style filled bar. */
+      .pane .tp-sldv_t { height: 24px; margin: 0; border-radius: 4px; overflow: hidden; background: rgba(255, 255, 255, 0.075); }
+      .pane .tp-sldv_t::before { content: none; }
+      .pane .tp-sldv_k { height: 100%; background: rgba(112, 176, 250, 0.32); }
+      .pane .tp-sldv_k::before, .pane .tp-sldv_k::after { content: none; }
+
+      /* Reserve the panel's footprint so the canvas contain-fits fully in view,
+         whether the panel is expanded or collapsed (its width never changes). */
+      .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 24px; padding-right: calc(312px + 12px + 24px); }
+      #mount { width: 100%; height: 100%; max-width: 100%; max-height: 100%; overflow: visible; }
+      #mount svg { display: block; width: 100% !important; height: 100% !important; }
       .info { position: absolute; top: 18px; left: 20px; color: var(--tc-muted); font: 500 11px/1 var(--tc-font); letter-spacing: .08em; text-transform: uppercase; }
       a { color: var(--tc-accent); }
 
@@ -91,17 +105,12 @@
         .info { top: 12px; left: 12px; }
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-BQjNMbzN.js"></script>
+    <script type="module" crossorigin src="./assets/index-CZ_g3Ui4.js"></script>
     <link rel="stylesheet" href="../tool-fonts.css" />
   </head>
   <body>
     <div class="wrap">
-      <div class="pane" id="pane">
-        <div class="pane__header">
-          <span class="pane__title">Block Layout</span>
-          <span class="pane__meta">Chainguard</span>
-        </div>
-      </div>
+      <div class="pane" id="pane"></div>
       <div class="stage">
         <div id="mount"></div>
         <div class="info">Press R to reroll seed</div>

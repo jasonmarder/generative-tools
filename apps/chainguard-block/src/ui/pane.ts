@@ -12,7 +12,7 @@ type Callbacks = {
 }
 
 export function createPane(container: HTMLElement, initial: Params, cbs: Callbacks) {
-  const pane = new Pane({ container })
+  const pane = new Pane({ container, title: 'Chainguard Block Generator', expanded: true })
 
   const params: Params = {
     lockCols: false,

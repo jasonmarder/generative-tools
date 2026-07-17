@@ -7,21 +7,6 @@
   background: #080808;
 }
 
-.controls-panel {
-  position: fixed;
-  z-index: 10;
-  top: 12px;
-  right: 12px;
-  bottom: 12px;
-  width: 312px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(20, 20, 20, 0.96);
-  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(18px) saturate(120%);
-}
-
 .preview-window {
   position: absolute;
   inset: 0;
@@ -34,24 +19,72 @@
     #080808;
 }
 
-.controls-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+/* --- Panel (lil-gui skin) ------------------------------------------------ */
+
+.controls-panel {
+  position: fixed;
+  z-index: 10;
+  top: 12px;
+  right: 12px;
+  width: 312px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(20, 20, 20, 0.96);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px) saturate(120%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .16) transparent;
   color: rgba(255,255,255,.9);
 }
 
-.panel-header {
-  display: flex;
+.controls-panel summary {
+  cursor: pointer;
+  list-style: none;
+}
+.controls-panel summary::-webkit-details-marker {
+  display: none;
+}
+.controls-panel summary::marker {
+  content: "";
+}
+
+.chevron {
   flex: none;
+  color: rgba(255,255,255,.4);
+  transition: transform 140ms ease;
+}
+details[open] > summary.panel-header .chevron,
+details[open] > summary.section-title .chevron {
+  transform: rotate(90deg);
+}
+
+.panel-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
   padding: 0 12px;
   border-bottom: 1px solid rgba(255,255,255,.1);
+  background: rgba(20, 20, 20, 0.98);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -.01em;
+}
+
+.panel-header:hover {
+  background: rgba(255,255,255,.04);
+}
+
+.panel-header__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .panel-header__meta {
@@ -61,26 +94,44 @@
   text-transform: uppercase;
 }
 
-.control-section {
-  padding: 0 12px 20px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+.controls-content {
+  display: flex;
+  flex-direction: column;
 }
 
-.control-section h2 {
+.control-section {
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.control-section--last {
+  border-bottom: 0;
+}
+
+.section-title {
   display: flex;
   align-items: center;
-  height: 36px;
-  margin: 0 -12px 10px;
+  gap: 7px;
+  height: 34px;
   padding: 0 12px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
   color: rgba(255,255,255,.86);
   font-size: 12px;
   font-weight: 600;
+  transition: background-color 120ms ease;
+}
+.section-title:hover {
+  background: rgba(255,255,255,.05);
+}
+
+.section-body {
+  padding: 2px 12px 20px;
+}
+.section-body--flush {
+  padding: 6px 0 8px;
 }
 
 .field-row { display: block; margin-top: 12px; }
-.field-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; color: rgba(255,255,255,.62); font-size: 12px; }
-.field-label output { color: rgba(255,255,255,.9); font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+.field-row:first-child { margin-top: 0; }
+.field-label { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; color: rgba(255,255,255,.64); font-size: 12px; }
+.field-label output { color: #70b0fa; font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 
 input[type="number"] {
   width: 100%;
@@ -89,11 +140,13 @@ input[type="number"] {
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 4px;
   outline: 0;
-  background: rgba(255,255,255,.07);
+  background: rgba(255,255,255,.075);
   color: rgba(255,255,255,.9);
   font: 500 12px var(--font-sans);
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
-input[type="number"]:focus { border-color: rgba(112,176,250,.7); box-shadow: 0 0 0 2px rgba(12,140,233,.18); }
+input[type="number"]:hover { background: rgba(255,255,255,.11); }
+input[type="number"]:focus { border-color: rgba(112,176,250,.7); background: rgba(255,255,255,.11); box-shadow: 0 0 0 2px rgba(112,176,250,.18); }
 
 input[type="range"] {
   width: 100%;
@@ -115,40 +168,21 @@ input[type="range"]::-webkit-slider-thumb { width: 14px; height: 14px; margin-to
 
 .field-help { margin: 6px 0 0; color: rgba(255,255,255,.36); font: 500 10px/1.4 var(--font-sans); }
 
-.panel-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: auto;
-  padding: 10px 12px;
-  border-top: 1px solid rgba(255,255,255,.1);
-  background: rgba(16,16,16,.98);
-}
-
-.primary-button, .secondary-button {
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+.function-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.92);
+  font: 600 12px var(--font-sans);
+  text-align: left;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transition: background-color 120ms ease;
 }
-
-.primary-button {
-  border-color: #0c8ce9;
-  background: #0c8ce9;
-  color: white;
-}
-
-.secondary-button {
-  background: rgba(255,255,255,.07);
-  color: rgba(255,255,255,.9);
-}
-
-button:hover { border-color: rgba(255,255,255,.25); background-color: rgba(255,255,255,.12); }
-.primary-button:hover { border-color: #299af0; background: #299af0; }
+.function-row:hover { background: rgba(12,140,233,.28); }
 
 .isometric-grid {
   width: 100%;
@@ -165,9 +199,6 @@ button:hover { border-color: rgba(255,255,255,.25); background-color: rgba(255,2
 }
 
 @media (max-width: 720px) {
-  .controls-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 46vh; }
-  .controls-content { overflow-y: auto; }
-  .panel-header { position: sticky; z-index: 2; top: 0; background: rgba(20,20,20,.98); }
-  .panel-actions { position: sticky; bottom: 0; }
+  .controls-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46vh; }
   .preview-window { padding: 16px 16px calc(46vh + 20px); }
 }

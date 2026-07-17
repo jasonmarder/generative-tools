@@ -16,6 +16,7 @@ const trigger = document.querySelector("#dock-trigger");
 const menu = document.querySelector("#tool-menu");
 const currentLabel = document.querySelector("#dock-current");
 const dockStatus = document.querySelector(".dock-status");
+const scrim = document.querySelector("#stage-scrim");
 const frameA = document.querySelector("#tool-frame-a");
 const frameB = document.querySelector("#tool-frame-b");
 const announcement = document.querySelector("#tool-announcement");
@@ -131,6 +132,11 @@ function setMenuOpen(nextOpen, { instant = false, focusOption = true, returnFocu
     trigger.setAttribute("aria-expanded", String(nextOpen));
     menu.setAttribute("aria-hidden", String(!nextOpen));
     menu.toggleAttribute("inert", !nextOpen);
+
+    // The stage scrim only needs to exist while the menu is open — see its
+    // styles.css comment. `hidden` (not just pointer-events) so it's also
+    // fully out of the a11y/hit-testing tree the instant the menu shuts.
+    scrim.hidden = !nextOpen;
 
     if (nextOpen && focusOption) {
       requestAnimationFrame(() => options[activeIndex].focus({ preventScroll: true }));

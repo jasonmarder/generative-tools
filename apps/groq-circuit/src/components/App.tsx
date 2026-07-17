@@ -1,8 +1,42 @@
 import { useMemo } from 'react';
-import { useControls } from 'leva';
+import { Leva, useControls } from 'leva';
 import { CircuitGenerator } from '../lib/CircuitGenerator';
 import { TopDownCircuitGenerator } from '../lib/TopDownCircuitGenerator';
 import { CircuitCanvas } from './CircuitCanvas';
+
+const PANEL_FONT =
+  '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Helvetica Neue", Arial, sans-serif';
+
+const panelTheme = {
+  colors: {
+    elevation1: 'rgba(20,20,20,0.96)',
+    elevation2: 'rgba(20,20,20,0.96)',
+    elevation3: 'rgba(255,255,255,0.075)',
+    accent1: '#70b0fa',
+    accent2: '#70b0fa',
+    accent3: '#70b0fa',
+    highlight1: 'rgba(255,255,255,0.92)',
+    highlight2: 'rgba(255,255,255,0.64)',
+    highlight3: '#ffffff',
+  },
+  radii: {
+    xs: '4px',
+    sm: '4px',
+    lg: '8px',
+  },
+  fonts: {
+    mono: PANEL_FONT,
+    sans: PANEL_FONT,
+  },
+  fontSizes: {
+    root: '12px',
+  },
+  sizes: {
+    rootWidth: '312px',
+    rowHeight: '34px',
+    titleBarHeight: '36px',
+  },
+};
 
 export function App() {
   const config = useControls({
@@ -52,6 +86,7 @@ export function App() {
 
   return (
     <div className="circuit-workspace">
+      <Leva theme={panelTheme} titleBar={{ title: 'Circuit Generator' }} />
       <CircuitCanvas
         pattern={pattern}
         width={config.width}
